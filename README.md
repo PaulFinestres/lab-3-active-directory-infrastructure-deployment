@@ -79,8 +79,47 @@ A Windows Server 2022 virtual machine was promoted to a Domain Controller for th
 
 A DHCP scope was configured to provide IP addresses to clients located in VLAN 10. DHCP Relay (`ip helper-address`) was configured on the Cisco Router-on-a-Stick, allowing DHCP requests to reach the server located in VLAN 50. Clients automatically receive their IP address, default gateway, DNS server, and domain suffix.
 
-![DHCP Validation](screenshots/dhcp-validation)
+![DHCP Validation](screenshots/dhcp-validation.png)
 
 ### File Server
 
+A centralized SMB share was created to host departmental folders for Developers, Engineers, and HR. Access control follows the AGDLP model, where users are assigned to Global Groups, Global Groups are nested into Domain Local Groups, and NTFS permissions are applied to the Domain Local Groups.
+
+![Share Folder Structure](screenshots/share-folder-structure.png)
+
 ### Group Policy
+
+#### Drive Mapping
+
+A Group Policy Preference automatically maps the appropriate departmental network share as a drive when a user signs in. This removes the need for manual configuration while ensuring users only access resources relevant to their department.
+
+![Drive Mapping](screenshots/drive-mapping-gpo.png)
+
+#### Software Deployment
+
+A Computer Configuration Group Policy was used to deploy the Notepad++ MSI package to domain-joined workstations. The installation is performed automatically during system startup from a shared network location.
+
+![Software Deployment GPO](screenshots/msi-deployment-gpo.png)
+
+## Validation
+
+The following tests were performed to verify that the infrastructure operates as expected.
+
+### Domain Authentication
+
+The Windows 10 client was successfully joined to the `paul.lan` domain, confirming proper communication with Active Directory Domain Services and DNS.
+
+![AD Domain Authentication](screenshots/ad-domain-authentication.png)
+
+### DHCP & Network Connectivity
+
+The client successfully received its network configuration from the DHCP server through DHCP Relay. Successful ping tests between the client and the domain controller confirm that inter-VLAN routing is working correctly.
+
+![Successful Ping Client - Server](screenshots/ping-client-server.png)
+
+### NTFS Authorization
+
+Folder permissions were validated using accounts from different departments. Users can access only the resources assigned to their department, while unauthorized access is denied according to the AGDLP permission model.
+
+![NTFS - Access Denied](screenshots/ntfs-no-access.png)
+
