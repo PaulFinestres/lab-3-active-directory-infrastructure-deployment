@@ -123,3 +123,35 @@ Folder permissions were validated using accounts from different departments. Use
 
 ![NTFS - Access Denied](screenshots/ntfs-no-access.png)
 
+## Challenges Encountered
+
+- **Software deployment through Group Policy**
+  
+  The initial software deployment did not occur because the GPO was linked to a user OU instead of the target computer OU. Linking the policy to the appropriate Computers OU resolved the issue.
+
+- **Verifying Computer Configuration policies**
+  
+  Initially, the deployed software GPO did not appear in the generated Group Policy report. The issue was resolved by using `gpresult /scope computer`, which correctly displayed the applied Computer Configuration policies.
+
+- **MSI deployment permissions**
+  
+  The shared MSI repository required appropriate NTFS permissions to allow domain computers to access the installation package during startup.
+
+  ## Lessons Learned
+
+Throughout this project, I gained practical experience with several core concepts, including:
+- Active Directory design using Organizational Units and the AGDLP permission model.
+- Managing shared resources with SMB and NTFS permissions.
+- Deploying and troubleshooting Group Policy Objects (GPOs).
+- Integrating DHCP Relay with a segmented VLAN infrastructure.
+- Validating infrastructure using tools such as `gpresult`, `ipconfig`, and `whoami`.
+
+## Future Improvements 
+
+Potential improvements to this environment include:
+
+- Automating the deployment using PowerShell.
+- Implementing Folder Redirection and Roaming Profiles.
+- Deploying additional software through Group Policy.
+- Adding Active Directory Certificate Services (AD CS).
+- Implementing a backup and recovery strategy for Active Directory.
