@@ -4,8 +4,7 @@
 ![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)
 ![Proxmox](https://img.shields.io/badge/Proxmox-VE-E57000?logo=proxmox)
 ![Active Directory](https://img.shields.io/badge/Active_Directory-Domain_Services-003366)
-![DNS](https://img.shields.io/badge/DNS-Configured-0A66C2)
-![DHCP](https://img.shields.io/badge/DHCP-Configured-2E8B57)
+
 
 <br>
 
