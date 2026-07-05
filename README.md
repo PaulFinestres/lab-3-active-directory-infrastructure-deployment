@@ -57,3 +57,30 @@ The router performs inter-VLAN routing between the configured VLANs.
 
 ## Network Topology
 
+The following diagram illustrates the network architecture of the lab. To better simulate an enterprise environment, client and server systems are separated into dedicated VLANs. Inter-VLAN routing is performed using a Cisco Router-on-a-Stick (RoaS) configuration.
+
+![Network Topology](screenshots/network-topology.png)
+
+## Active Directory Architecture
+
+The Active Directory environment is organized into dedicated Organizational Units (OUs) for users, groups, and computers. Security groups follow the AGDLP model to provide structured and scalable permission management.
+
+![Active Directory Architecture](screenshots/agdlp-structure.png)
+
+## Configuration 
+
+**Router configuration:** [`configs/r1.cfg`](configs/r1.cfg)
+
+### Domain Services
+
+A Windows Server 2022 virtual machine was promoted to a Domain Controller for the `paul.lan` domain. The Active Directory Domain Services (AD DS), DNS, and DHCP roles were installed to provide centralized authentication, name resolution, and IP address management.
+
+### DHCP
+
+A DHCP scope was configured to provide IP addresses to clients located in VLAN 10. DHCP Relay (`ip helper-address`) was configured on the Cisco Router-on-a-Stick, allowing DHCP requests to reach the server located in VLAN 50. Clients automatically receive their IP address, default gateway, DNS server, and domain suffix.
+
+![DHCP Validation](screenshots/dhcp-validation)
+
+### File Server
+
+### Group Policy
