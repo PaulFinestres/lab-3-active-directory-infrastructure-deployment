@@ -6,7 +6,7 @@
 
 <br>
 
-Designed and deployed a Windows Server Active Directory infrastructure featuring DNS, DHCP, VLAN segmentation, centralized authentication, AGDLP-based access control, SMB file sharing, NTFS permissions, and Group Policy management.
+Implemented a Windows Server Active Directory infrastructure featuring DNS, DHCP, VLAN segmentation, centralized authentication, AGDLP-based access control, SMB file sharing, NTFS permissions, and Group Policy management.
 
 <br>
 
