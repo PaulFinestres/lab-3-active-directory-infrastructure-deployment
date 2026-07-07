@@ -4,11 +4,9 @@
 ![Windows Server](https://custom-icon-badges.demolab.com/badge/Windows_Server-0078D6?logo=windows11&logoColor=white)
 ![Proxmox VE](https://custom-icon-badges.demolab.com/badge/Proxmox_VE-E57000?logo=proxmox&logoColor=white)
 
-<br>
 
 Implemented a Windows Server Active Directory infrastructure featuring DNS, DHCP, VLAN segmentation, centralized authentication, AGDLP-based access control, SMB file sharing, NTFS permissions, and Group Policy management.
 
-<br>
 
 **Technologies:** Windows Server 2022 • Active Directory (AD DS) • DNS • DHCP • Cisco IOS • Proxmox VE • GPO • SMB • NTFS
 
