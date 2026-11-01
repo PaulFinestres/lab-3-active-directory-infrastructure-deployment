@@ -1,98 +1,152 @@
-# Lab 5.1 – Network Architecture & Infrastructure
+# Lab 3 - Active Directory Infrastructure Deployment
 
-**Status:** Completed  
-**Estimated duration:** 10–12 hours
 
-Lab 5.1 establishes the virtual network foundation for the SOC environment. It covers the Proxmox infrastructure, network segmentation, routing through OPNsense, and the basic services required to administer and validate the environment.
+![Windows Server](https://custom-icon-badges.demolab.com/badge/Windows_Server-0078D6?logo=windows11&logoColor=white)
+![Proxmox VE](https://custom-icon-badges.demolab.com/badge/Proxmox_VE-E57000?logo=proxmox&logoColor=white)
+
+
+Implemented a Windows Server Active Directory infrastructure featuring DNS, DHCP, VLAN segmentation, centralized authentication, AGDLP-based access control, SMB file sharing, NTFS permissions, and Group Policy management.
+
+
+**Technologies:** Windows Server 2022 • Active Directory (AD DS) • DNS • DHCP • Cisco IOS • Proxmox VE • GPO • SMB • NTFS
+
+## Table of Contents
+
+- [Objectives](#objectives)
+- [Infrastructure](#infrastructure)
+- [Network Topology](#network-topology)
+- [Active Directory Architecture](#active-directory-architecture)
+- [Configuration](#configuration)
+- [Validation](#validation)
+- [Challenges Encountered](#challenges-encountered)
+- [Lessons Learned](#lessons-learned)
+- [Future Improvements](#future-improvements)
+
+
+## Objectives
+
+The objective of this project was to design and deploy a realistic Active Directory infrastructure simulating a small enterprise environment.
+
+**This projet demonstrates:**
+
+- Implementing role-based access control following the AGDLP model.
+- Securing shared folders using NTFS permissions.
+- Configuring Group Policy Objects (GPOs) to automate administrative tasks.
+- Centralizing network services through Active Directory, including DNS and DHCP.
 
 ## Infrastructure
 
-The lab is hosted on Proxmox VE. The virtual machines are separated by role, with OPNsense providing routing and firewalling between the lab networks.
+This lab runs on a mini PC hosting Proxmox VE with two physical network interfaces. 
+One interface is connected to my home network for management, while the second is connected to a Cisco router configured for Router-on-a-Stick (RoaS). 
+Virtual machines communicate through a Proxmox Linux bridge, which forwards 802.1Q tagged traffic to the router. 
+The router performs inter-VLAN routing between the configured VLANs.
 
-| Component | Role |
-|---|---|
-| Proxmox VE | Hypervisor |
-| OPNsense (`soc-fw-01`) | Firewall and router |
-| Windows Server (`soc-ad-01`) | Active Directory and DNS |
-| Ubuntu Server 26.04.1 (`soc-siem-01`) | SOC / SIEM server |
-| Debian with GUI (`soc-adm-01`) | Administration workstation |
-| Kali Linux (`soc-attack-01`) | Attack simulation workstation |
-| Debian Server (`soc-dmz-01`) | DMZ host |
-| Windows 11 (`soc-cli-01`) | Client workstation |
+### IP Addressing
 
-The Proxmox inventory below shows the virtual machines deployed for this lab.
+| Component | IP Address | VLAN | Assignment |
+|-----------|------------|------|------------|
+| Windows Server 2022 | 10.0.50.10 | 50 | Static |
+| Windows 10 Client | 10.0.10.100 | 10 | DHCP |
+| Router g0/0.50 | 10.0.50.14 | 50 | Gateway |
+| Router g0/0.10 | 10.0.10.254 | 10 | Gateway |
 
-![Proxmox SOC VM inventory](evidence/01-proxmox-vm-inventory.png)
+## Network Topology
 
-## Network Architecture
+The following diagram illustrates the network architecture of the lab. To better simulate an enterprise environment, client and server systems are separated into dedicated VLANs. Inter-VLAN routing is performed using a Cisco Router-on-a-Stick (RoaS) configuration.
 
-The network is divided into VLANs according to the role of each environment. OPNsense acts as the central router and firewall, controlling inter-VLAN traffic and providing outbound connectivity through the home network.
+![Network Topology](screenshots/network-topology.png)
 
-![SOC network architecture](architecture.png)
+## Active Directory Architecture
 
-### IP addressing
+The Active Directory environment is organized into dedicated Organizational Units (OUs) for users, groups, and computers. Security groups follow the AGDLP model to provide structured and scalable permission management.
 
-| VLAN | Name | Network | Gateway |
-|---:|---|---|---|
-| 10 | CLIENTS | `192.168.10.0/24` | `192.168.10.254` |
-| 20 | ATTACKER | `172.20.20.0/24` | `172.20.20.254` |
-| 40 | DMZ | `10.0.40.0/27` | `10.0.40.30` |
-| 50 | SERVERS | `10.0.50.0/28` | `10.0.50.14` |
-| 80 | SOC / MONITORING | `172.20.80.0/28` | `172.20.80.14` |
-| 90 | ADMIN | `192.168.90.0/28` | `192.168.90.14` |
-| 99 | INFRA-MGMT | `192.168.99.96/28` | `192.168.99.110` |
+![Active Directory Architecture](screenshots/agdlp-structure.png)
 
-## Implementation
+## Configuration 
 
-### OPNsense
+**Router configuration:** [`configs/r1.cfg`](configs/r1.cfg)
 
-OPNsense provides the layer 3 gateways for the lab VLANs. Its WAN interface, `WAN_HOME`, uses the static address `192.168.1.200/24` on the home network, with `192.168.1.254` as the upstream gateway.
+### Domain Services
 
-Outbound source NAT is configured manually. Traffic from the internal VLANs is translated to the OPNsense WAN address when leaving through `WAN_HOME`.
+A Windows Server 2022 virtual machine was promoted to a Domain Controller for the `paul.lan` domain. The Active Directory Domain Services (AD DS), DNS, and DHCP roles were installed to provide centralized authentication, name resolution, and IP address management.
 
-![OPNsense dashboard](evidence/02-opnsense-dashboard.png)
+### DHCP
 
-**Manual outbound NAT configuration:**
+A DHCP scope was configured to provide IP addresses to clients located in VLAN 10. DHCP Relay (`ip helper-address`) was configured on the Cisco Router-on-a-Stick, allowing DHCP requests to reach the server located in VLAN 50. Clients automatically receive their IP address, default gateway, DNS server, and domain suffix.
 
-![OPNsense outbound NAT rules](evidence/03-opnsense-source-nat.png)
+![DHCP Validation](screenshots/dhcp-validation.png)
 
-### Administration access
+### File Server
 
-The administration workstation (`soc-adm-01`) is used to manage the lab systems. Remote access to the SOC server is provided over SSH on TCP port `3333`.
+A centralized SMB share was created to host departmental folders for Developers, Engineers, and HR. Access control follows the AGDLP model, where users are assigned to Global Groups, Global Groups are nested into Domain Local Groups, and NTFS permissions are applied to the Domain Local Groups.
 
-SSH is configured for public-key authentication, with password authentication and root login disabled. The effective daemon configuration was checked with `sshd -T`.
+![Share Folder Structure](screenshots/share-folder-structure.png)
 
-![Effective SSH configuration](evidence/04-ssh-hardening.png)
+### Group Policy
 
-### DNS
+#### Drive Mapping
 
-The Active Directory server at `10.0.50.10` provides internal DNS for the `paul.lan` domain. The SOC server uses this address as its DNS resolver.
+A Group Policy Preference automatically maps the appropriate departmental network share as a drive when a user signs in. This removes the need for manual configuration while ensuring users only access resources relevant to their department.
 
-Forward and reverse lookups were checked to confirm name resolution for the internal systems.
+![Drive Mapping](screenshots/drive-mapping-gpo.png)
 
-![DNS forward lookup](evidence/06-dns-forward-lookup.png)
+#### Software Deployment
 
-![DNS reverse lookup](evidence/05-dns-reverse-lookup.png)
+A Computer Configuration Group Policy was used to deploy the Notepad++ MSI package to domain-joined workstations. The installation is performed automatically during system startup from a shared network location.
 
-## Verification
+![Software Deployment GPO](screenshots/msi-deployment-gpo.png)
 
-The following checks were used to verify the main services configured in this lab:
+## Validation
 
-- **DNS:** forward lookup of the Active Directory server and reverse lookup of the SOC server address (`172.20.80.10`).
-- **SSH:** successful remote connection to the SOC server from the administration workstation using WindTerm.
-- **SSH hardening:** confirmation of the effective SSH daemon settings.
-- **Outbound NAT:** review of the manual source NAT rules on OPNsense.
+The following tests were performed to verify that the infrastructure operates as expected.
 
-![Successful SSH connection to the SOC server](evidence/07-ssh-connection.png)
+### Domain Authentication
 
-## Challenges & Troubleshooting
+The Windows 10 client was successfully joined to the `paul.lan` domain, confirming proper communication with Active Directory Domain Services and DNS.
 
-- **Outbound NAT interface assignment:** During configuration, one source NAT rule was assigned to the wrong interface. The rule was corrected so that outbound translations for the internal VLANs use `WAN_HOME`.
+![AD Domain Authentication](screenshots/ad-domain-authentication.png)
 
-## Takeaways
+### DHCP & Network Connectivity
 
-This lab provided practical experience with virtual network design, VLAN-based segmentation, firewall routing, outbound NAT, internal DNS and secure remote administration. It also reinforced the importance of checking interface assignments and validating each service after configuration.
+The client successfully received its network configuration from the DHCP server through DHCP Relay. Successful ping tests between the client and the domain controller confirm that inter-VLAN routing is working correctly.
 
-## Next step
+![Successful Ping Client - Server](screenshots/ping-client-server.png)
 
-**Lab 5.2 – Suricata IDS on OPNsense:** configure network intrusion detection and validate alert generation using controlled test traffic.
+### NTFS Authorization
+
+Folder permissions were validated using accounts from different departments. Users can access only the resources assigned to their department, while unauthorized access is denied according to the AGDLP permission model.
+
+![NTFS - Access Denied](screenshots/ntfs-no-access.png)
+
+## Challenges Encountered
+
+- **Software deployment through Group Policy**
+  
+  The initial software deployment did not occur because the GPO was linked to a user OU instead of the target computer OU. Linking the policy to the appropriate Computers OU resolved the issue.
+
+- **Verifying Computer Configuration policies**
+  
+  Initially, the deployed software GPO did not appear in the generated Group Policy report. The issue was resolved by using `gpresult /scope computer`, which correctly displayed the applied Computer Configuration policies.
+
+- **MSI deployment permissions**
+  
+  The shared MSI repository required appropriate NTFS permissions to allow domain computers to access the installation package during startup.
+
+  ## Lessons Learned
+
+Throughout this project, I gained practical experience with several core concepts, including:
+- Active Directory design using Organizational Units and the AGDLP permission model.
+- Managing shared resources with SMB and NTFS permissions.
+- Deploying and troubleshooting Group Policy Objects (GPOs).
+- Integrating DHCP Relay with a segmented VLAN infrastructure.
+- Validating infrastructure using tools such as `gpresult`, `ipconfig`, and `whoami`.
+
+## Future Improvements 
+
+Potential improvements to this environment include:
+
+- Automating the deployment using PowerShell.
+- Implementing Folder Redirection and Roaming Profiles.
+- Deploying additional software through Group Policy.
+- Adding Active Directory Certificate Services (AD CS).
+- Implementing a backup and recovery strategy for Active Directory.
